@@ -180,8 +180,9 @@ Toggle via tray menu and ⌘⇧R.
   - `paper/search?query=<topic>&limit=20&fields=title,abstract,authors,year,citationCount,influentialCitationCount,externalIds,url,publicationDate`
   - `paper/<arxivId>?fields=…` — to enrich an arXiv hit with citation
     counts (for ranking)
-- API key: optional but recommended (raises rate limit 10× to 1 req/s).
-  Stored in `electron-store`; user pastes it in Settings.
+- API key: **provided (1 req/s tier).** Loaded from `.env.local` in dev
+  (gitignored), and from `electron-store` in production; user can rotate
+  via Settings. Never committed.
 - Topical queries for the three lanes:
   - **AI/ML innovations**: `large language model`, `mixture of experts`,
     `reinforcement learning from human feedback`, `model architecture`
@@ -202,8 +203,8 @@ that's blog/news content. Candidates:
   Manageable list, low volume, very high signal.
 - /r/MachineLearning top posts (Reddit JSON API, no key).
 
-**Recommendation:** in v1 add HN (top story filter) and a small RSS list.
-Skip Reddit for v1 (noisy, requires auth changes in 2026).
+**Decision (locked):** v1 ships with HN (top-story filter) + curated
+lab-blog RSS. Skip Reddit. Sufficient for the Industry and Idea lanes.
 
 ---
 
@@ -427,22 +428,19 @@ Total: ~5 working days end-to-end if no rabbit holes.
 
 ---
 
-## 11. Open questions
+## 11. Decisions log
 
-1. **API key for Semantic Scholar** — do you already have one, or are we
-   running keyless (slower, 1 req/5min anonymous)? S2 issues keys to
-   anyone via a Google Form.
-2. **Industry lane scope** — happy with the HN + lab-blog RSS approach for
-   v1? Or do you want me to spec something heavier (Twitter/X firehose,
-   Substack RSS bundle)?
-3. **Startup-idea heuristic** — current proposal is keyword-driven and
-   shallow. Stretch idea: run each candidate paper's abstract through
-   Claude Haiku and score "productizability" 0–10. Adds an API key + per-day
-   cost (~$0.005/refresh at 50 papers) but the lane gets dramatically
-   better. Want this in v1 or as M9?
-4. **Auto-launch at login** — yes by default, or opt-in?
+| # | Question | Decision | Date |
+|---|---|---|---|
+| 1 | S2 API key | Provided, 1 req/s tier. `.env.local` in dev, `electron-store` in prod. | 2026-05-26 |
+| 2 | Industry lane source mix | HN Algolia + curated lab-blog RSS. No Reddit, no X. | 2026-05-26 |
+| 3 | LLM-scored ranking | **No LLM in v1.** Keyword-only across all three lanes. Re-evaluate post-M8. | 2026-05-26 |
+| 4 | Auto-launch at login | **On by default**, toggleable in Settings. | 2026-05-26 |
+
+### Still open
+
 5. **Drag-to-resize behavior** — fixed size, or user-resizable with
-   reflowing list?
+   reflowing list? (Lean: user-resizable, persist size.)
 
 ---
 
