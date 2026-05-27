@@ -101,30 +101,40 @@ items.
 
 ## 3. Window behavior (the "feels like the X widget" part)
 
-A single `BrowserWindow` configured roughly:
+**Target look:** matches a native macOS desktop widget (2x2 large tile, à la
+the X widget). Fixed size, square-ish, big rounded corners, sits **at
+desktop level** (visible against the wallpaper, hidden by app windows when
+they overlap). Never on top of browser tabs or other windows.
+
+A single `BrowserWindow` configured:
 
 ```ts
 new BrowserWindow({
-  width: 360,
-  height: 520,
+  width: 360,                       // matches macOS "large" 2x2 widget tile
+  height: 360,
   x: <restored from store>,
   y: <restored from store>,
   frame: false,
   transparent: true,
-  vibrancy: 'under-window',        // macOS blur
+  vibrancy: 'under-window',         // macOS blur
   visualEffectState: 'active',
   hasShadow: true,
-  resizable: true,
+  resizable: false,                 // fixed-size like a real widget
+  movable: true,
   minimizable: false,
   maximizable: false,
-  alwaysOnTop: false,              // see "Pin mode" below
+  fullscreenable: false,
   skipTaskbar: false,
+  roundedCorners: true,             // macOS-native corner rounding
   webPreferences: {
     contextIsolation: true,
     nodeIntegration: false,
     preload: '<preload.js>',
   },
 });
+
+// Sit at desktop level — visible on the wallpaper, hidden behind windows.
+win.setAlwaysOnTop(true, 'desktop');
 ```
 
 Plus macOS-specific calls:
@@ -132,23 +142,25 @@ Plus macOS-specific calls:
 - `win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: false })` —
   the widget follows you between Spaces
 - `app.dock.hide()` — no dock icon, just a menubar tray
+- `win.setWindowButtonVisibility(false)` — hide the (unused) traffic-light
+  cluster
 - Drag region via CSS `-webkit-app-region: drag` on the header
+- CSS `border-radius: 22px` on `body` to match macOS widget corner radius
+  (22 pt for a large widget tile, 18 pt for medium)
 
-### Pin modes
+### Why not "always on top"
 
-1. **Desktop mode** (default) — `setAlwaysOnTop(false)` + level just above
-   the desktop. Behaves like the X widget: visible when the desktop is
-   visible, hides behind windows. Achieved with
-   `win.setAlwaysOnTop(true, 'desktop')` and detaching focus-stealing.
-2. **Floating mode** — true always-on-top (`'floating'` level) for when you
-   want it visible over everything.
-
-Toggle via tray menu and ⌘⇧R.
+Original M1 used `alwaysOnTop: true, 'floating'` for simplicity, which made
+the widget hover over every other window (incl. browser tabs). Locked
+decision: the widget should feel like a wallpaper companion, not a chrome
+panel. Stick to `'desktop'` level. **No "floating mode" toggle in v1** —
+users who want always-on-top can run a separate floating panel later.
 
 ### Tray (menu bar)
 
 - Icon in menu bar (rounded square book glyph)
-- Menu: Show/Hide, Refresh now, Pin mode submenu, Settings…, Quit
+- Menu: Show/Hide, Refresh now, Settings…, Quit
+- No pin-mode toggle in v1 — see "Why not always on top" above
 
 ---
 
@@ -436,11 +448,23 @@ Total: ~5 working days end-to-end if no rabbit holes.
 | 2 | Industry lane source mix | HN Algolia + curated lab-blog RSS. No Reddit, no X. | 2026-05-26 |
 | 3 | LLM-scored ranking | **No LLM in v1.** Keyword-only across all three lanes. Re-evaluate post-M8. | 2026-05-26 |
 | 4 | Auto-launch at login | **On by default**, toggleable in Settings. | 2026-05-26 |
+| 5 | Always-on-top | **No.** Sit at macOS `'desktop'` level — visible on the wallpaper, hidden by overlapping windows. Never covers browser tabs. | 2026-05-26 |
+| 6 | Window size & shape | **Fixed 360×360**, ~22 pt border radius, non-resizable. Mirrors a macOS large 2x2 widget tile (e.g. X widget). | 2026-05-26 |
 
 ### Still open
 
-5. **Drag-to-resize behavior** — fixed size, or user-resizable with
-   reflowing list? (Lean: user-resizable, persist size.)
+— none —
+
+### Backlog: refactor M1 window config to match decisions 5 & 6
+
+M1 shipped with `alwaysOnTop: true, 'floating'` and `resizable: true`,
+360×520. Needs a small follow-up PR (or fold into M8 polish) to:
+- swap `alwaysOnTop` → `setAlwaysOnTop(true, 'desktop')`
+- set `resizable: false`, fixed 360×360
+- add `border-radius: 22px` on body
+- drop the resize-persistence (`win.on('resized', …)`) — only persist
+  position from `'moved'`
+- remove Show/Hide pin-mode-related plumbing if any was added
 
 ---
 
