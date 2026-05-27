@@ -72,6 +72,14 @@ header {
   color: var(--fg);
 }
 
+.icon-btn.active {
+  color: #ffd166;
+}
+
+.icon-btn.active:hover {
+  color: #ffdf8a;
+}
+
 .spinning {
   animation: spin 1s linear infinite;
 }

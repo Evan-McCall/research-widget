@@ -19,6 +19,16 @@ export type RefreshResult = {
   fetched: number;
   inserted: number;
   updated: number;
+  enriched: number;
   error?: string;
   at: string; // ISO
 };
+
+export type PaperMetrics = {
+  externalId: string;
+  citations?: number;
+  influentialCitations?: number;
+  hnPoints?: number;
+};
+
+export type RankMode = 'balanced' | 'allTime';

@@ -1,8 +1,8 @@
-import type { Paper, RefreshResult } from '../shared/types.js';
+import type { Paper, RankMode, RefreshResult } from '../shared/types.js';
 
 type Api = {
   version: string;
-  listPapers: () => Promise<Paper[]>;
+  listPapers: (mode?: RankMode) => Promise<Paper[]>;
   refresh: () => Promise<RefreshResult>;
   openUrl: (url: string) => Promise<void>;
   onPapersChanged: (cb: () => void) => () => void;
@@ -16,14 +16,25 @@ declare global {
 
 const feedEl = document.getElementById('feed')!;
 const refreshBtn = document.getElementById('refresh') as HTMLButtonElement;
+const modeBtn = document.getElementById('mode-toggle') as HTMLButtonElement;
 const statusEl = document.getElementById('status')!;
 const lastUpdatedEl = document.getElementById('last-updated')!;
 
+const MODE_KEY = 'rankMode';
+let rankMode: RankMode = (localStorage.getItem(MODE_KEY) as RankMode) ?? 'balanced';
 let isRefreshing = false;
+
+function applyModeButtonState(): void {
+  modeBtn.classList.toggle('active', rankMode === 'allTime');
+  modeBtn.title =
+    rankMode === 'allTime'
+      ? 'All-time most cited (click for balanced mix)'
+      : 'Balanced: importance + recency (click for all-time top)';
+}
 
 async function loadFeed(): Promise<void> {
   try {
-    const papers = await window.api.listPapers();
+    const papers = await window.api.listPapers(rankMode);
     render(papers);
   } catch (err) {
     renderError(err);
@@ -88,7 +99,15 @@ function formatMeta(p: Paper): string {
   const source = p.source === 'arxiv' ? 'arXiv' : p.source;
   const cat = p.categories[0] ?? '';
   const age = relativeTime(new Date(p.publishedAt));
-  return [source, cat, age].filter(Boolean).join(' · ');
+  const citations =
+    p.citations !== undefined && p.citations > 0 ? `${formatCount(p.citations)}c` : '';
+  return [source, cat, age, citations].filter(Boolean).join(' · ');
+}
+
+function formatCount(n: number): string {
+  if (n < 1000) return String(n);
+  if (n < 10_000) return `${(n / 1000).toFixed(1)}k`;
+  return `${Math.round(n / 1000)}k`;
 }
 
 function relativeTime(d: Date): string {
@@ -126,12 +145,21 @@ function el(
 }
 
 refreshBtn.addEventListener('click', refresh);
+
+modeBtn.addEventListener('click', () => {
+  rankMode = rankMode === 'allTime' ? 'balanced' : 'allTime';
+  localStorage.setItem(MODE_KEY, rankMode);
+  applyModeButtonState();
+  loadFeed();
+});
+
 document.getElementById('settings')?.addEventListener('click', () => {
   // M7: settings modal
   console.log('settings clicked');
 });
 
 window.api.onPapersChanged(loadFeed);
+applyModeButtonState();
 loadFeed().then(refresh);
 
 export {};

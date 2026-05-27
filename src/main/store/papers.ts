@@ -1,4 +1,4 @@
-import type { Paper } from '../../shared/types.js';
+import type { Paper, PaperMetrics } from '../../shared/types.js';
 import { getDb } from './db.js';
 
 type Row = {
@@ -73,15 +73,36 @@ export function upsertPapers(papers: Paper[]): { inserted: number; updated: numb
   return { inserted, updated };
 }
 
-export function getNewestPapers(limit = 15): Paper[] {
+export function getAllPapers(): Paper[] {
   const db = getDb();
-  const rows = db
-    .prepare(
-      `SELECT * FROM papers ORDER BY datetime(published_at) DESC LIMIT ?`,
-    )
-    .all(limit) as Row[];
-
+  const rows = db.prepare(`SELECT * FROM papers`).all() as Row[];
   return rows.map(rowToPaper);
+}
+
+export function updateMetrics(metrics: PaperMetrics[]): number {
+  if (metrics.length === 0) return 0;
+  const db = getDb();
+  const stmt = db.prepare(`
+    UPDATE papers
+       SET citations = COALESCE(?, citations),
+           influential_citations = COALESCE(?, influential_citations),
+           hn_points = COALESCE(?, hn_points)
+     WHERE external_id = ?
+  `);
+  const tx = db.transaction((batch: PaperMetrics[]): number => {
+    let touched = 0;
+    for (const m of batch) {
+      const r = stmt.run(
+        m.citations ?? null,
+        m.influentialCitations ?? null,
+        m.hnPoints ?? null,
+        m.externalId,
+      );
+      if (r.changes > 0) touched += 1;
+    }
+    return touched;
+  });
+  return tx(metrics);
 }
 
 function rowToPaper(r: Row): Paper {

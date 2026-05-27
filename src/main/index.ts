@@ -10,8 +10,15 @@ import {
 } from 'electron';
 import Store from 'electron-store';
 import path from 'node:path';
+import { loadEnv } from './env.js';
+import { rank } from './ranking.js';
 import { refreshAll } from './refresh.js';
-import { getNewestPapers } from './store/papers.js';
+import { getAllPapers } from './store/papers.js';
+
+loadEnv();
+console.log(
+  `[boot] S2 key loaded: ${process.env.SEMANTIC_SCHOLAR_API_KEY ? 'yes (' + process.env.SEMANTIC_SCHOLAR_API_KEY.slice(0, 6) + '…)' : 'NO'}`,
+);
 
 // Fixed widget size — matches a macOS large 2x2 desktop widget tile (e.g. X).
 const WIDGET_WIDTH = 330;
@@ -113,7 +120,9 @@ function createTray(): void {
 }
 
 function registerIpc(): void {
-  ipcMain.handle('papers:list', () => getNewestPapers(15));
+  ipcMain.handle('papers:list', (_event, mode: 'balanced' | 'allTime' = 'balanced') =>
+    rank(getAllPapers(), 15, mode),
+  );
   ipcMain.handle('papers:refresh', async () => {
     const result = await refreshAll();
     win?.webContents.send('papers:changed');

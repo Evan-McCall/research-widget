@@ -1,9 +1,10 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { Paper, RefreshResult } from '../shared/types.js';
+import type { Paper, RankMode, RefreshResult } from '../shared/types.js';
 
 const api = {
   version: '0.0.1',
-  listPapers: (): Promise<Paper[]> => ipcRenderer.invoke('papers:list'),
+  listPapers: (mode: RankMode = 'balanced'): Promise<Paper[]> =>
+    ipcRenderer.invoke('papers:list', mode),
   refresh: (): Promise<RefreshResult> => ipcRenderer.invoke('papers:refresh'),
   openUrl: (url: string): Promise<void> => ipcRenderer.invoke('shell:open', url),
   onPapersChanged: (cb: () => void): (() => void) => {
