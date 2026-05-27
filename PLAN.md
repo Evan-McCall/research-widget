@@ -133,8 +133,7 @@ new BrowserWindow({
   },
 });
 
-// Sit at desktop level — visible on the wallpaper, hidden behind windows.
-win.setAlwaysOnTop(true, 'desktop');
+// No setAlwaysOnTop call — see "Why no always-on-top" below.
 ```
 
 Plus macOS-specific calls:
@@ -142,19 +141,23 @@ Plus macOS-specific calls:
 - `win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: false })` —
   the widget follows you between Spaces
 - `app.dock.hide()` — no dock icon, just a menubar tray
-- `win.setWindowButtonVisibility(false)` — hide the (unused) traffic-light
-  cluster
 - Drag region via CSS `-webkit-app-region: drag` on the header
 - CSS `border-radius: 22px` on `body` to match macOS widget corner radius
   (22 pt for a large widget tile, 18 pt for medium)
 
-### Why not "always on top"
+### Why no always-on-top
 
 Original M1 used `alwaysOnTop: true, 'floating'` for simplicity, which made
 the widget hover over every other window (incl. browser tabs). Locked
 decision: the widget should feel like a wallpaper companion, not a chrome
-panel. Stick to `'desktop'` level. **No "floating mode" toggle in v1** —
-users who want always-on-top can run a separate floating panel later.
+panel.
+
+Electron's typed window levels for `setAlwaysOnTop` don't include the
+macOS-private `'desktop'` level, so we can't pin to the wallpaper layer
+without unsafe casts. The clean compromise: **don't call `setAlwaysOnTop`
+at all.** The window sits in normal z-order — clicking another app brings
+that app forward, leaving the widget behind. Clicking the widget brings it
+forward. That's close enough to the X-widget feel for v1.
 
 ### Tray (menu bar)
 
@@ -448,23 +451,22 @@ Total: ~5 working days end-to-end if no rabbit holes.
 | 2 | Industry lane source mix | HN Algolia + curated lab-blog RSS. No Reddit, no X. | 2026-05-26 |
 | 3 | LLM-scored ranking | **No LLM in v1.** Keyword-only across all three lanes. Re-evaluate post-M8. | 2026-05-26 |
 | 4 | Auto-launch at login | **On by default**, toggleable in Settings. | 2026-05-26 |
-| 5 | Always-on-top | **No.** Sit at macOS `'desktop'` level — visible on the wallpaper, hidden by overlapping windows. Never covers browser tabs. | 2026-05-26 |
-| 6 | Window size & shape | **Fixed 360×360**, ~22 pt border radius, non-resizable. Mirrors a macOS large 2x2 widget tile (e.g. X widget). | 2026-05-26 |
+| 5 | Always-on-top | **No.** Don't call `setAlwaysOnTop` — normal z-order, ducks behind other windows when they're focused. Electron's `'desktop'` level isn't in the typed API. | 2026-05-27 |
+| 6 | Window size & shape | **Fixed 330×330**, non-resizable. Inner body border-radius = 12 px to match the native macOS frameless-window rounding (~10 pt). | 2026-05-27 |
+| 7 | Outer corner radius | **Accept native ~10 pt.** macOS controls the outer rounding when vibrancy is on; the only way to get bigger outer corners is to drop vibrancy (and lose wallpaper blur). Wallpaper blur > big corners. | 2026-05-27 |
 
 ### Still open
 
 — none —
 
-### Backlog: refactor M1 window config to match decisions 5 & 6
+### Applied in M1.1
 
-M1 shipped with `alwaysOnTop: true, 'floating'` and `resizable: true`,
-360×520. Needs a small follow-up PR (or fold into M8 polish) to:
-- swap `alwaysOnTop` → `setAlwaysOnTop(true, 'desktop')`
-- set `resizable: false`, fixed 360×360
-- add `border-radius: 22px` on body
-- drop the resize-persistence (`win.on('resized', …)`) — only persist
-  position from `'moved'`
-- remove Show/Hide pin-mode-related plumbing if any was added
+- `alwaysOnTop` removed, `resizable: false`, fixed 330×330
+- Vibrancy switched to `'fullscreen-ui'` (lighter than `'under-window'`)
+- Inner body `border-radius: 12px` (matches native window rounding)
+- Header / footer dividers removed; title bumped to 15px
+- Store key changed `windowBounds` → `windowPosition` (only x/y now)
+- `'resized'` listener dropped
 
 ---
 

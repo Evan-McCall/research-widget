@@ -2,8 +2,12 @@ import { app, BrowserWindow, Menu, Tray, nativeImage, screen } from 'electron';
 import Store from 'electron-store';
 import path from 'node:path';
 
-type Bounds = { x: number; y: number; width: number; height: number };
-type StoreShape = { windowBounds?: Bounds };
+// Fixed widget size — matches a macOS large 2x2 desktop widget tile (e.g. X).
+const WIDGET_WIDTH = 330;
+const WIDGET_HEIGHT = 330;
+
+type Position = { x: number; y: number };
+type StoreShape = { windowPosition?: Position };
 
 const store = new Store<StoreShape>();
 
@@ -12,25 +16,29 @@ let tray: Tray | null = null;
 
 function createWindow(): void {
   const work = screen.getPrimaryDisplay().workArea;
-  const bounds = store.get('windowBounds') ?? {
-    width: 360,
-    height: 520,
-    x: work.x + work.width - 380,
+  const position = store.get('windowPosition') ?? {
+    x: work.x + work.width - WIDGET_WIDTH - 20,
     y: work.y + 40,
   };
 
   win = new BrowserWindow({
-    ...bounds,
+    width: WIDGET_WIDTH,
+    height: WIDGET_HEIGHT,
+    x: position.x,
+    y: position.y,
     frame: false,
     transparent: true,
-    vibrancy: 'under-window',
+    // 'fullscreen-ui' is lighter / more transparent than 'under-window';
+    // closer to a native macOS desktop widget tile.
+    vibrancy: 'fullscreen-ui',
     visualEffectState: 'active',
     hasShadow: true,
-    resizable: true,
+    resizable: false,
+    movable: true,
     minimizable: false,
     maximizable: false,
     fullscreenable: false,
-    alwaysOnTop: true,
+    roundedCorners: true,
     show: false,
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'),
@@ -40,6 +48,10 @@ function createWindow(): void {
     },
   });
 
+  // Live in normal z-order — clicking another app lets it go in front of the
+  // widget. Electron's typed levels don't include the macOS-private 'desktop'
+  // level, so the cleanest "sits on the wallpaper, ducks behind windows"
+  // behavior is just to never call setAlwaysOnTop.
   win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: false });
 
   if (process.env.ELECTRON_RENDERER_URL) {
@@ -50,13 +62,12 @@ function createWindow(): void {
 
   win.once('ready-to-show', () => win?.show());
 
-  const persist = (): void => {
+  win.on('moved', () => {
     if (win && !win.isDestroyed()) {
-      store.set('windowBounds', win.getBounds());
+      const [x, y] = win.getPosition();
+      store.set('windowPosition', { x, y });
     }
-  };
-  win.on('moved', persist);
-  win.on('resized', persist);
+  });
   win.on('closed', () => {
     win = null;
   });

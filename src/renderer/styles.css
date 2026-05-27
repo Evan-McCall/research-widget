@@ -1,9 +1,8 @@
 :root {
   color-scheme: dark;
-  --fg: rgba(255, 255, 255, 0.92);
-  --fg-muted: rgba(255, 255, 255, 0.55);
-  --border: rgba(255, 255, 255, 0.08);
-  --hover: rgba(255, 255, 255, 0.06);
+  --fg: rgba(255, 255, 255, 0.95);
+  --fg-muted: rgba(255, 255, 255, 0.6);
+  --hover: rgba(255, 255, 255, 0.08);
 }
 
 * {
@@ -27,16 +26,16 @@ body {
   user-select: none;
   -webkit-user-select: none;
   border-radius: 12px;
+  overflow: hidden;
 }
 
 header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--border);
+  padding: 14px 18px 8px;
   font-weight: 600;
-  font-size: 13px;
+  font-size: 15px;
 }
 
 .drag {
@@ -92,9 +91,8 @@ main {
 }
 
 footer {
-  padding: 8px 14px;
-  border-top: 1px solid var(--border);
-  font-size: 11px;
+  padding: 6px 18px 12px;
+  font-size: 10px;
   color: var(--fg-muted);
   display: flex;
   justify-content: space-between;
