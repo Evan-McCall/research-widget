@@ -1,6 +1,17 @@
-import { app, BrowserWindow, Menu, Tray, nativeImage, screen } from 'electron';
+import {
+  app,
+  BrowserWindow,
+  Menu,
+  Tray,
+  ipcMain,
+  nativeImage,
+  screen,
+  shell,
+} from 'electron';
 import Store from 'electron-store';
 import path from 'node:path';
+import { refreshAll } from './refresh.js';
+import { getNewestPapers } from './store/papers.js';
 
 // Fixed widget size — matches a macOS large 2x2 desktop widget tile (e.g. X).
 const WIDGET_WIDTH = 330;
@@ -60,7 +71,12 @@ function createWindow(): void {
     win.loadFile(path.join(__dirname, '../renderer/index.html'));
   }
 
-  win.once('ready-to-show', () => win?.show());
+  win.once('ready-to-show', () => {
+    win?.show();
+    if (process.env.ELECTRON_RENDERER_URL) {
+      win?.webContents.openDevTools({ mode: 'detach' });
+    }
+  });
 
   win.on('moved', () => {
     if (win && !win.isDestroyed()) {
@@ -96,12 +112,29 @@ function createTray(): void {
   );
 }
 
-app.whenReady().then(() => {
+function registerIpc(): void {
+  ipcMain.handle('papers:list', () => getNewestPapers(15));
+  ipcMain.handle('papers:refresh', async () => {
+    const result = await refreshAll();
+    win?.webContents.send('papers:changed');
+    return result;
+  });
+  ipcMain.handle('shell:open', (_event, url: string) => {
+    if (typeof url !== 'string') return;
+    if (!/^https?:\/\//i.test(url)) return;
+    shell.openExternal(url);
+  });
+}
+
+app.whenReady().then(async () => {
   if (process.platform === 'darwin') {
     app.dock?.hide();
   }
+  registerIpc();
   createWindow();
   createTray();
+  // Renderer triggers its own initial refresh after load — avoids racing
+  // a 'papers:changed' against the renderer's listener registration.
 });
 
 app.on('window-all-closed', () => {
