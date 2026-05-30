@@ -16,17 +16,18 @@ import { refreshAll } from './refresh.js';
 import { startScheduler } from './scheduler.js';
 import { getAllPapers, getLastCachedAt } from './store/papers.js';
 
-loadEnv();
-console.log(
-  `[boot] S2 key loaded: ${process.env.SEMANTIC_SCHOLAR_API_KEY ? 'yes (' + process.env.SEMANTIC_SCHOLAR_API_KEY.slice(0, 6) + '…)' : 'NO'}`,
-);
+// loadEnv runs after app ready so app.getPath('userData') is valid in
+// packaged builds (env.ts touches app.getPath).
 
 // Fixed widget size — matches a macOS large 2x2 desktop widget tile (e.g. X).
 const WIDGET_WIDTH = 330;
 const WIDGET_HEIGHT = 330;
 
 type Position = { x: number; y: number };
-type StoreShape = { windowPosition?: Position };
+type StoreShape = {
+  windowPosition?: Position;
+  launchAtLoginEnabled?: boolean;
+};
 
 const store = new Store<StoreShape>();
 
@@ -101,6 +102,11 @@ function createTray(): void {
   tray = new Tray(nativeImage.createEmpty());
   tray.setTitle('🔬');
   tray.setToolTip('Research Widget');
+  rebuildTrayMenu();
+}
+
+function rebuildTrayMenu(): void {
+  if (!tray) return;
   tray.setContextMenu(
     Menu.buildFromTemplate([
       {
@@ -115,9 +121,32 @@ function createTray(): void {
         },
       },
       { type: 'separator' },
+      {
+        label: 'Launch at login',
+        type: 'checkbox',
+        checked: store.get('launchAtLoginEnabled') ?? true,
+        click: (item) => setLaunchAtLogin(item.checked),
+      },
+      { type: 'separator' },
       { label: 'Quit', click: () => app.quit() },
     ]),
   );
+}
+
+function setLaunchAtLogin(enabled: boolean): void {
+  store.set('launchAtLoginEnabled', enabled);
+  if (app.isPackaged) {
+    app.setLoginItemSettings({ openAtLogin: enabled, openAsHidden: false });
+  }
+  rebuildTrayMenu();
+}
+
+function reconcileLoginItem(): void {
+  // Only register the login item when running from a packaged .app — we
+  // don't want every `npm run dev` invocation to wire itself into login.
+  if (!app.isPackaged) return;
+  const enabled = store.get('launchAtLoginEnabled') ?? true;
+  app.setLoginItemSettings({ openAtLogin: enabled, openAsHidden: false });
 }
 
 function registerIpc(): void {
@@ -138,12 +167,17 @@ function registerIpc(): void {
 }
 
 app.whenReady().then(async () => {
+  loadEnv();
+  console.log(
+    `[boot] S2 key loaded: ${process.env.SEMANTIC_SCHOLAR_API_KEY ? 'yes (' + process.env.SEMANTIC_SCHOLAR_API_KEY.slice(0, 6) + '…)' : 'NO'}`,
+  );
   if (process.platform === 'darwin') {
     app.dock?.hide();
   }
   registerIpc();
   createWindow();
   createTray();
+  reconcileLoginItem();
   // Renderer triggers its own initial refresh after load — avoids racing
   // a 'papers:changed' against the renderer's listener registration.
   startScheduler(() => win?.webContents.send('papers:changed'));

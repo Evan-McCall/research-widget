@@ -1,21 +1,33 @@
+import { app } from 'electron';
 import fs from 'node:fs';
 import path from 'node:path';
 
 let loaded = false;
 
 /**
- * Lightweight .env.local loader for dev mode. In production the key will
- * come from electron-store (Settings UI in M7); .env.local is not packaged.
+ * Lightweight env loader. Checks several paths in priority order:
+ *   1. process.cwd()/.env.local  — dev mode (electron-vite cwd is the repo)
+ *   2. <userData>/.env           — packaged app (user drops a file there)
+ *
+ * Earlier matches win. Once M7 lands the packaged app will read keys from
+ * electron-store via a Settings UI instead.
  */
 export function loadEnv(): void {
   if (loaded) return;
   loaded = true;
 
-  // process.cwd() is the project root in dev (electron-vite); not meaningful
-  // in packaged builds, but we don't ship .env.local there.
-  const file = path.join(process.cwd(), '.env.local');
-  if (!fs.existsSync(file)) return;
+  const candidates = [
+    path.join(process.cwd(), '.env.local'),
+    path.join(app.getPath('userData'), '.env'),
+  ];
 
+  for (const file of candidates) {
+    if (!fs.existsSync(file)) continue;
+    parseInto(file);
+  }
+}
+
+function parseInto(file: string): void {
   const content = fs.readFileSync(file, 'utf8');
   for (const raw of content.split('\n')) {
     const line = raw.trim();

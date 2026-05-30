@@ -9,6 +9,7 @@ out/
 build/
 release/
 *.app/
+mac-arm64/
 
 # Electron-builder
 *.dmg
