@@ -79,6 +79,14 @@ export function getAllPapers(): Paper[] {
   return rows.map(rowToPaper);
 }
 
+export function getLastCachedAt(): string | null {
+  const db = getDb();
+  const row = db
+    .prepare(`SELECT MAX(cached_at) AS m FROM papers`)
+    .get() as { m: string | null };
+  return row.m;
+}
+
 export function updateMetrics(metrics: PaperMetrics[]): number {
   if (metrics.length === 0) return 0;
   const db = getDb();

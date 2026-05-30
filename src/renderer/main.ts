@@ -3,6 +3,7 @@ import type { Paper, RankMode, RefreshResult } from '../shared/types.js';
 type Api = {
   version: string;
   listPapers: (mode?: RankMode) => Promise<Paper[]>;
+  lastRefreshAt: () => Promise<string | null>;
   refresh: () => Promise<RefreshResult>;
   openUrl: (url: string) => Promise<void>;
   onPapersChanged: (cb: () => void) => () => void;
@@ -17,7 +18,6 @@ declare global {
 const feedEl = document.getElementById('feed')!;
 const refreshBtn = document.getElementById('refresh') as HTMLButtonElement;
 const modeBtn = document.getElementById('mode-toggle') as HTMLButtonElement;
-const statusEl = document.getElementById('status')!;
 const lastUpdatedEl = document.getElementById('last-updated')!;
 
 const MODE_KEY = 'rankMode';
@@ -34,8 +34,12 @@ function applyModeButtonState(): void {
 
 async function loadFeed(): Promise<void> {
   try {
-    const papers = await window.api.listPapers(rankMode);
+    const [papers, lastAt] = await Promise.all([
+      window.api.listPapers(rankMode),
+      window.api.lastRefreshAt(),
+    ]);
     render(papers);
+    if (lastAt) setLastUpdated(new Date(lastAt));
   } catch (err) {
     renderError(err);
   }
@@ -45,14 +49,12 @@ async function refresh(): Promise<void> {
   if (isRefreshing) return;
   isRefreshing = true;
   refreshBtn.classList.add('spinning');
-  setStatus('Fetching…');
   try {
     const result = await window.api.refresh();
-    if (!result.ok) {
-      setStatus(`Error: ${result.error ?? 'unknown'}`, true);
-    } else {
-      setStatus(`v${window.api.version}`);
+    if (result.ok) {
       setLastUpdated(new Date(result.at));
+    } else {
+      console.warn('[refresh] failed:', result.error);
     }
     await loadFeed();
   } finally {
@@ -121,11 +123,6 @@ function relativeTime(d: Date): string {
   return d.toLocaleDateString();
 }
 
-function setStatus(text: string, isError = false): void {
-  statusEl.textContent = text;
-  statusEl.classList.toggle('error', isError);
-}
-
 function setLastUpdated(d: Date): void {
   lastUpdatedEl.textContent = `Updated ${d.toLocaleTimeString([], {
     hour: 'numeric',
@@ -151,11 +148,6 @@ modeBtn.addEventListener('click', () => {
   localStorage.setItem(MODE_KEY, rankMode);
   applyModeButtonState();
   loadFeed();
-});
-
-document.getElementById('settings')?.addEventListener('click', () => {
-  // M7: settings modal
-  console.log('settings clicked');
 });
 
 window.api.onPapersChanged(loadFeed);

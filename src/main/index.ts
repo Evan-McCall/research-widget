@@ -13,7 +13,8 @@ import path from 'node:path';
 import { loadEnv } from './env.js';
 import { rank } from './ranking.js';
 import { refreshAll } from './refresh.js';
-import { getAllPapers } from './store/papers.js';
+import { startScheduler } from './scheduler.js';
+import { getAllPapers, getLastCachedAt } from './store/papers.js';
 
 loadEnv();
 console.log(
@@ -123,6 +124,7 @@ function registerIpc(): void {
   ipcMain.handle('papers:list', (_event, mode: 'balanced' | 'allTime' = 'balanced') =>
     rank(getAllPapers(), 15, mode),
   );
+  ipcMain.handle('papers:lastRefreshAt', () => getLastCachedAt());
   ipcMain.handle('papers:refresh', async () => {
     const result = await refreshAll();
     win?.webContents.send('papers:changed');
@@ -144,6 +146,7 @@ app.whenReady().then(async () => {
   createTray();
   // Renderer triggers its own initial refresh after load — avoids racing
   // a 'papers:changed' against the renderer's listener registration.
+  startScheduler(() => win?.webContents.send('papers:changed'));
 });
 
 app.on('window-all-closed', () => {
