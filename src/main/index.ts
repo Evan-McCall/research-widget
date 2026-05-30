@@ -59,11 +59,8 @@ function createWindow(): void {
     },
   });
 
-  // Live in normal z-order — clicking another app lets it go in front of the
-  // widget. Electron's typed levels don't include the macOS-private 'desktop'
-  // level, so the cleanest "sits on the wallpaper, ducks behind windows"
-  // behavior is just to never call setAlwaysOnTop.
-  win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: false });
+  // Stay on the normal desktop only — don't follow into full-screen Spaces.
+  win.setVisibleOnAllWorkspaces(false);
 
   if (process.env.ELECTRON_RENDERER_URL) {
     win.loadURL(process.env.ELECTRON_RENDERER_URL);

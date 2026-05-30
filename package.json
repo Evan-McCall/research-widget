@@ -14,7 +14,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "pack": "npm run build && electron-builder --mac --dir",
-    "dist": "npm run build && electron-builder --mac --dmg",
+    "dist": "npm run build && electron-builder --mac",
     "postinstall": "electron-rebuild -f -w better-sqlite3"
   },
   "build": {
