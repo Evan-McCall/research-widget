@@ -1,6 +1,5 @@
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
-import prettier from 'eslint-config-prettier';
 
 export default [
   {
@@ -8,7 +7,6 @@ export default [
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
-  prettier,
   {
     rules: {
       // Allow unused vars / args prefixed with `_` — useful for IPC handlers

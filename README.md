@@ -160,9 +160,7 @@ research-widget/
 │   │   └── styles.css          # transparent vibrancy panel
 │   └── shared/
 │       └── types.ts            # Paper, RankMode, RefreshResult
-├── .github/workflows/          # CI + Claude @mention action
-├── PLAN.md                     # design decisions + decisions log
-└── CHANGELOG.md
+└── .github/workflows/          # CI + Claude @mention action
 ```
 
 ---
