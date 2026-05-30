@@ -1,13 +1,4 @@
-import {
-  app,
-  BrowserWindow,
-  Menu,
-  Tray,
-  ipcMain,
-  nativeImage,
-  screen,
-  shell,
-} from 'electron';
+import { app, BrowserWindow, Menu, Tray, ipcMain, nativeImage, screen, shell } from 'electron';
 import Store from 'electron-store';
 import path from 'node:path';
 import { loadEnv } from './env.js';

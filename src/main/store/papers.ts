@@ -81,9 +81,7 @@ export function getAllPapers(): Paper[] {
 
 export function getLastCachedAt(): string | null {
   const db = getDb();
-  const row = db
-    .prepare(`SELECT MAX(cached_at) AS m FROM papers`)
-    .get() as { m: string | null };
+  const row = db.prepare(`SELECT MAX(cached_at) AS m FROM papers`).get() as { m: string | null };
   return row.m;
 }
 

@@ -5,8 +5,7 @@ const api = {
   version: '0.0.1',
   listPapers: (mode: RankMode = 'balanced'): Promise<Paper[]> =>
     ipcRenderer.invoke('papers:list', mode),
-  lastRefreshAt: (): Promise<string | null> =>
-    ipcRenderer.invoke('papers:lastRefreshAt'),
+  lastRefreshAt: (): Promise<string | null> => ipcRenderer.invoke('papers:lastRefreshAt'),
   refresh: (): Promise<RefreshResult> => ipcRenderer.invoke('papers:refresh'),
   openUrl: (url: string): Promise<void> => ipcRenderer.invoke('shell:open', url),
   onPapersChanged: (cb: () => void): (() => void) => {

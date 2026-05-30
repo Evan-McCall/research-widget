@@ -17,8 +17,7 @@ const S2_TOPIC_QUERIES = [
 
 let inFlight: Promise<RefreshResult> | null = null;
 
-const sleep = (ms: number): Promise<void> =>
-  new Promise((resolve) => setTimeout(resolve, ms));
+const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
 export function refreshAll(): Promise<RefreshResult> {
   if (inFlight) return inFlight;

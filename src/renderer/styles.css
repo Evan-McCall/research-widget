@@ -23,7 +23,12 @@ body {
   display: flex;
   flex-direction: column;
   color: var(--fg);
-  font: 13px -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+  font:
+    13px -apple-system,
+    BlinkMacSystemFont,
+    'SF Pro Text',
+    system-ui,
+    sans-serif;
   user-select: none;
   -webkit-user-select: none;
   border-radius: 12px;
@@ -85,8 +90,12 @@ header {
 }
 
 @keyframes spin {
-  from { transform: rotate(0); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 main {

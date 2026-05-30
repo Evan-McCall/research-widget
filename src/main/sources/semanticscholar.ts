@@ -66,10 +66,7 @@ export async function fetchS2Metrics(externalIds: string[]): Promise<PaperMetric
  * (desc). Use this to surface high-impact papers in a topic regardless of
  * when they were published.
  */
-export async function searchS2ByTopic(
-  query: string,
-  limit = 100,
-): Promise<Paper[]> {
+export async function searchS2ByTopic(query: string, limit = 100): Promise<Paper[]> {
   const url = new URL(`${ENDPOINT}/paper/search/bulk`);
   url.searchParams.set('query', query);
   url.searchParams.set('sort', 'citationCount:desc');
@@ -100,7 +97,7 @@ function toPaper(p: S2SearchPaper): Paper | null {
   const externalId = arxivId ? `arxiv:${arxivId}` : `s2:${p.paperId}`;
   const url = arxivId
     ? `https://arxiv.org/abs/${arxivId}`
-    : p.url ?? `https://www.semanticscholar.org/paper/${p.paperId}`;
+    : (p.url ?? `https://www.semanticscholar.org/paper/${p.paperId}`);
 
   return {
     externalId,

@@ -22,10 +22,7 @@ export function scorePaper(p: Paper, mode: RankMode, now = Date.now()): number {
 
   if (mode === 'allTime') {
     // No age penalty, no cutoff — pure popularity / impact.
-    return (
-      Math.log10(1 + citations) +
-      2 * Math.log10(1 + influential)
-    );
+    return Math.log10(1 + citations) + 2 * Math.log10(1 + influential);
   }
 
   // Balanced (default): recency × τ=90d with an 18-month hard cutoff.

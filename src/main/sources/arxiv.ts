@@ -71,7 +71,9 @@ function toPaper(e: ArxivEntry): Paper | null {
   const arxivId = extractArxivId(e.id);
   if (!arxivId) return null;
 
-  const authors = asArray(e.author).map((a) => a.name).filter(Boolean);
+  const authors = asArray(e.author)
+    .map((a) => a.name)
+    .filter(Boolean);
   const categories = asArray(e.category).map((c) => c['@_term']);
   const htmlLink = asArray(e.link).find((l) => l['@_type'] === 'text/html');
   const url = htmlLink?.['@_href'] ?? e.id;

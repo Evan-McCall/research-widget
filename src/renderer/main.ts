@@ -81,11 +81,7 @@ function render(papers: Paper[]): void {
       });
       item.append(
         el('div', { class: 'paper-title' }, p.title),
-        el(
-          'div',
-          { class: 'paper-meta' },
-          formatMeta(p),
-        ),
+        el('div', { class: 'paper-meta' }, formatMeta(p)),
       );
       return item;
     }),
